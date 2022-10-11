@@ -1,16 +1,25 @@
-import * as cdk from 'aws-cdk-lib';
+import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { AuthApi } from './auth-api';
+import { ProtectedApi } from './protected-api';
+import { CognitoUserPool } from './user-pool';
 
-export class AwsServerlessAuthStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+export class AwsServerlessAuthStack extends Stack {
+	constructor(scope: Construct, id: string, props?: StackProps) {
+		super(scope, id, props);
 
-    // The code that defines your stack goes here
+		const userPool = new CognitoUserPool(this, 'UserPool');
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'AwsServerlessAuthQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
-  }
+		const { userPoolId, userPoolClientId } = userPool;
+
+		new AuthApi(this, 'AuthServiceApi', {
+			userPoolId,
+			userPoolClientId,
+		});
+
+		new ProtectedApi(this, 'ProtectedApi', {
+			userPoolId,
+			userPoolClientId,
+		});
+	}
 }
