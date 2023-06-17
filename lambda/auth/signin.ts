@@ -47,7 +47,7 @@ exports.handler = async function (event: APIGatewayProxyEvent): Promise<APIGatew
 			headers: {
 				'Access-Control-Allow-Headers': '*',
 				'Access-Control-Allow-Origin': '*',
-				'Set-Cookie': `token=${token}; SameSite=None; Secure; HttpOnly; Path=/; Max-Age=3600;`,
+				'Set-Cookie': `token=${token}; SameSite=None; Secure; HttpOnly; Path=/; Max-Age=360000;`,
 			},
 			body: JSON.stringify({
 				message: 'Auth successfull',
