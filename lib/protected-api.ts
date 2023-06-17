@@ -29,8 +29,6 @@ export class ProtectedApi extends Construct {
 			},
 		});
 
-		const protectedRes = api.root.addResource('protected');
-
 		const commonFnProps = {
 			runtime: Runtime.NODEJS_16_X,
 			handler: 'handler',
@@ -40,9 +38,18 @@ export class ProtectedApi extends Construct {
 			},
 		};
 
+		const protectedRes = api.root.addResource('protected');
+
+		const publicRes = api.root.addResource('public');
+
 		const protectedFn = new NodejsFunction(this, 'ProtectedFn', {
 			...commonFnProps,
 			entry: './lambda/protected.ts',
+		});
+
+		const publicFn = new NodejsFunction(this, 'PublicFn', {
+			...commonFnProps,
+			entry: './lambda/public.ts',
 		});
 
 		const authorizerFn = new NodejsFunction(this, 'AuthorizerFn', {
@@ -60,5 +67,7 @@ export class ProtectedApi extends Construct {
 			authorizer: requestAuthorizer,
 			authorizationType: AuthorizationType.CUSTOM,
 		});
+
+		publicRes.addMethod('GET', new LambdaIntegration(publicFn));
 	}
 }
