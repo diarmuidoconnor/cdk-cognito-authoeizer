@@ -1,8 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { CognitoIdentityServiceProvider } from 'aws-sdk';
-import { SignUpRequest } from 'aws-sdk/clients/cognitoidentityserviceprovider';
+import { CognitoIdentityProviderClient, SignUpCommand, SignUpCommandInput } from "@aws-sdk/client-cognito-identity-provider"; // ES Modules import
 
-const cognito = new CognitoIdentityServiceProvider();
+const client = new CognitoIdentityProviderClient({ region: 'eu-west-1' });
 
 type eventBody = {
 	username: string;
@@ -24,17 +23,17 @@ exports.handler = async function (event: APIGatewayProxyEvent): Promise<APIGatew
 
 	const { username, email, password }: eventBody = JSON.parse(event.body);
 
-	const params: SignUpRequest = {
+	const params: SignUpCommandInput = {
 		ClientId: process.env.CLIENT_ID!,
 		Username: username,
 		Password: password,
 		UserAttributes: [{ Name: 'email', Value: email }],
 	};
 
-	try {
-		const res = await cognito.signUp(params).promise();
+	try {		
+		const command = new SignUpCommand(params);
+		const res = await client.send(command);
 		console.log('[AUTH]', res);
-
 		return {
 			statusCode: 200,
 			body: JSON.stringify({

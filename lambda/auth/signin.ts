@@ -1,8 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { CognitoIdentityServiceProvider } from 'aws-sdk';
-import { InitiateAuthRequest } from 'aws-sdk/clients/cognitoidentityserviceprovider';
+import { CognitoIdentityProviderClient, InitiateAuthCommand, InitiateAuthCommandInput } from "@aws-sdk/client-cognito-identity-provider"; // ES Modules import
 
-const cognito = new CognitoIdentityServiceProvider();
+const client = new CognitoIdentityProviderClient({ region: 'eu-west-1' });
 
 exports.handler = async function (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
 	console.log('[EVENT]', event);
@@ -18,7 +17,7 @@ exports.handler = async function (event: APIGatewayProxyEvent): Promise<APIGatew
 
 	const { username, password } = JSON.parse(event.body);
 
-	const params: InitiateAuthRequest = {
+	const params: InitiateAuthCommandInput = {
 		ClientId: process.env.CLIENT_ID!,
 		AuthFlow: 'USER_PASSWORD_AUTH',
 		AuthParameters: {
@@ -27,10 +26,10 @@ exports.handler = async function (event: APIGatewayProxyEvent): Promise<APIGatew
 		},
 	};
 
-	try {
-		const { AuthenticationResult } = await cognito.initiateAuth(params).promise();
-		console.log('[AUTH]', AuthenticationResult);
-
+	try {		
+		const command = new InitiateAuthCommand(params);
+		const {AuthenticationResult} = await client.send(command);
+		
 		if (!AuthenticationResult) {
 			return {
 				statusCode: 400,
@@ -39,6 +38,7 @@ exports.handler = async function (event: APIGatewayProxyEvent): Promise<APIGatew
 				}),
 			};
 		}
+		console.log('[AUTH]', AuthenticationResult);
 
 		const token = AuthenticationResult.IdToken;
 
