@@ -1,73 +1,73 @@
-import { Duration } from 'aws-cdk-lib';
+import { Duration } from "aws-cdk-lib";
 import {
-	RestApi,
-	EndpointType,
-	Cors,
-	AuthorizationType,
-	IdentitySource,
-	LambdaIntegration,
-	RequestAuthorizer,
-} from 'aws-cdk-lib/aws-apigateway';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Construct } from 'constructs';
+  RestApi,
+  EndpointType,
+  Cors,
+  AuthorizationType,
+  IdentitySource,
+  LambdaIntegration,
+  RequestAuthorizer,
+} from "aws-cdk-lib/aws-apigateway";
+import { Runtime } from "aws-cdk-lib/aws-lambda";
+import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { Construct } from "constructs";
 
 type ProtectedApiProps = {
-	userPoolId: string;
-	userPoolClientId: string;
+  userPoolId: string;
+  userPoolClientId: string;
 };
 
 export class ProtectedApi extends Construct {
-	constructor(scope: Construct, id: string, props: ProtectedApiProps) {
-		super(scope, id);
+  constructor(scope: Construct, id: string, props: ProtectedApiProps) {
+    super(scope, id);
 
-		const api = new RestApi(this, 'ProtectedApi', {
-			description: 'Protected RestApi',
-			endpointTypes: [EndpointType.REGIONAL],
-			defaultCorsPreflightOptions: {
-				allowOrigins: Cors.ALL_ORIGINS,
-			},
-		});
+    const api = new RestApi(this, "ProtectedApi", {
+      description: "Protected RestApi",
+      endpointTypes: [EndpointType.REGIONAL],
+      defaultCorsPreflightOptions: {
+        allowOrigins: Cors.ALL_ORIGINS,
+      },
+    });
 
-		const commonFnProps = {
-			runtime: Runtime.NODEJS_16_X,
-			handler: 'handler',
-			environment: {
-				USER_POOL_ID: props.userPoolId,
-				CLIENT_ID: props.userPoolClientId,
-			},
-		};
+    const commonFnProps = {
+      runtime: Runtime.NODEJS_16_X,
+      handler: "handler",
+      environment: {
+        USER_POOL_ID: props.userPoolId,
+        CLIENT_ID: props.userPoolClientId,
+      },
+    };
 
-		const protectedRes = api.root.addResource('protected');
+    const protectedRes = api.root.addResource("protected");
 
-		const publicRes = api.root.addResource('public');
+    const publicRes = api.root.addResource("public");
 
-		const protectedFn = new NodejsFunction(this, 'ProtectedFn', {
-			...commonFnProps,
-			entry: './lambda/protected.ts',
-		});
+    const protectedFn = new NodejsFunction(this, "ProtectedFn", {
+      ...commonFnProps,
+      entry: "./lambda/protected.ts",
+    });
 
-		const publicFn = new NodejsFunction(this, 'PublicFn', {
-			...commonFnProps,
-			entry: './lambda/public.ts',
-		});
+    const publicFn = new NodejsFunction(this, "PublicFn", {
+      ...commonFnProps,
+      entry: "./lambda/public.ts",
+    });
 
-		const authorizerFn = new NodejsFunction(this, 'AuthorizerFn', {
-			...commonFnProps,
-			entry: './lambda/auth/authorizer.ts',
-		});
+    const authorizerFn = new NodejsFunction(this, "AuthorizerFn", {
+      ...commonFnProps,
+      entry: "./lambda/auth/authorizer.ts",
+    });
 
-		const requestAuthorizer = new RequestAuthorizer(this, 'RequestAuthorizer', {
-			identitySources: [IdentitySource.header('cookie')],
-			handler: authorizerFn,
-			resultsCacheTtl: Duration.minutes(0),
-		});
+    const requestAuthorizer = new RequestAuthorizer(this, "RequestAuthorizer", {
+      identitySources: [IdentitySource.header("cookie")],
+      handler: authorizerFn,
+      resultsCacheTtl: Duration.minutes(0),
+    });
 
-		protectedRes.addMethod('GET', new LambdaIntegration(protectedFn), {
-			authorizer: requestAuthorizer,
-			authorizationType: AuthorizationType.CUSTOM,
-		});
+    protectedRes.addMethod("GET", new LambdaIntegration(protectedFn), {
+      authorizer: requestAuthorizer,
+      authorizationType: AuthorizationType.CUSTOM,
+    });
 
-		publicRes.addMethod('GET', new LambdaIntegration(publicFn));
-	}
+    publicRes.addMethod("GET", new LambdaIntegration(publicFn));
+  }
 }
